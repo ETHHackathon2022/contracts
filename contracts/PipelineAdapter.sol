@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IRegistry.sol";
 import "./interfaces/IPipeline.sol";
 
-import "hardhat/console.sol";
-
 contract PipelineAdapter {
     using Address for address;
 
@@ -18,8 +16,6 @@ contract PipelineAdapter {
         IERC20 tokenIn,
         uint256 amountIn
     ) internal returns (uint256 price) {
-        console.log("In adapter deposit");
-
         address pipeline = registry.getVaultPipeline(vault);
         bytes memory returnData = pipeline.functionDelegateCall(
             abi.encodeWithSelector(

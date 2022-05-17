@@ -57,8 +57,11 @@ const config: HardhatUserConfig = {
         ],
     },
     networks: {
-        forking: {
-            url: process.env.FORKING_RPC_URL,
+        hardhat: {
+            forking: {
+                url: process.env.FORKING_RPC_URL!,
+                blockNumber: 14791509,
+            },
         },
         mainnet: ethereumConfig,
         ropsten: ethereumConfig,

@@ -9,8 +9,6 @@ import "./interfaces/IIndex.sol";
 import "./interfaces/IRegistry.sol";
 import "./interfaces/IFactory.sol";
 
-import "hardhat/console.sol";
-
 contract Index is
     IIndex,
     PipelineAdapter,
@@ -186,13 +184,9 @@ contract Index is
         IERC20 tokenIn,
         uint256 amount
     ) private {
-        console.log("Using token in %s", address(tokenIn));
-
         // Deposit each component according to it's weight
         uint256 boughtPrice;
         for (uint256 i = 0; i < components.length; i++) {
-            console.log("Depositing to component %s", components[i].vault);
-
             boughtPrice += _deposit(
                 components[i].vault,
                 tokenIn,

@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "../interfaces/IPipeline.sol";
 
-import "hardhat/console.sol";
-
 contract PureUniswapV2Pipeline is IPipeline {
     string public constant PIPELINE_NAME = "PureUniswapV2Pipeline";
 
@@ -21,8 +19,6 @@ contract PureUniswapV2Pipeline is IPipeline {
         address tokenIn,
         uint256 amountIn
     ) external override returns (uint256 price) {
-        console.log("In pipeline's deposit");
-
         uint256 amountOut;
         if (tokenIn != vault) {
             amountOut = _swap(registry, tokenIn, vault, amountIn);
@@ -84,20 +80,17 @@ contract PureUniswapV2Pipeline is IPipeline {
             (address)
         );
 
-        console.log("Swapping with router %s", router);
-
         address[] memory path = new address[](2);
         (path[0], path[1]) = (from, to);
 
         IERC20(from).approve(router, type(uint256).max);
-        console.log("call swap");
-        return
-            IUniswapV2Router02(router).swapExactTokensForTokens(
-                amountIn,
-                0,
-                path,
-                address(this),
-                block.timestamp
-            )[1];
+        IUniswapV2Router02(router).swapExactTokensForTokens(
+            amountIn,
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
+        return 0;
     }
 }

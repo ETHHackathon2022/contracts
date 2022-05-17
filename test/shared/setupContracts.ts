@@ -1,9 +1,41 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "hardhat";
+import { ERC20Mock, UniswapRouter } from "../../typechain";
 import { mineBlock } from "./utils";
 
 const { AddressZero, MaxUint256 } = ethers.constants;
 const { parseUnits, keccak256, concat, zeroPad, arrayify, toUtf8Bytes } =
     ethers.utils;
+
+async function addLiquidityUSD(
+    from: SignerWithAddress,
+    router: UniswapRouter,
+    tokenA: ERC20Mock,
+    tokenB: ERC20Mock,
+    amount = "10000000"
+) {
+    const amountA = parseUnits(amount, await tokenA.decimals());
+    const amountB = parseUnits(amount, await tokenB.decimals());
+
+    await tokenA.mint(from.address, amountA);
+    await tokenB.mint(from.address, amountB);
+    await tokenA.approve(router.address, MaxUint256);
+    await tokenB.approve(router.address, MaxUint256);
+
+    const block = await ethers.provider.getBlock(
+        await ethers.provider.getBlockNumber()
+    );
+    await router.addLiquidity(
+        tokenA.address,
+        tokenB.address,
+        amountA,
+        amountB,
+        0,
+        0,
+        from.address,
+        block.timestamp + 100
+    );
+}
 
 export async function setupContracts() {
     const [deployer] = await ethers.getSigners();
@@ -14,6 +46,7 @@ export async function setupContracts() {
     const usdc = await TokenMockFactory.deploy("USDC", "USDC", 6);
     const usdt = await TokenMockFactory.deploy("USDT", "USDT", 6);
     const dai = await TokenMockFactory.deploy("DAI", "DAI", 18);
+    const busd = await TokenMockFactory.deploy("BUSD", "BUSD", 18);
 
     // Deploy uniswap
 
@@ -38,57 +71,17 @@ export async function setupContracts() {
 
     // Add uniswap liquidity
 
-    const usdcAmount = parseUnits("10000000", 6);
-    const usdtAmount = parseUnits("10000000", 6);
-    const daiAmount = parseUnits("10000000", 18);
-
-    await usdc.mint(deployer.address, usdcAmount.mul(2));
-    await usdt.mint(deployer.address, usdtAmount.mul(2));
-    await dai.mint(deployer.address, daiAmount.mul(2));
-
-    await usdc.approve(uniswapRouter.address, MaxUint256);
-    await usdt.approve(uniswapRouter.address, MaxUint256);
-    await dai.approve(uniswapRouter.address, MaxUint256);
-
-    await uniswapFactory.createPair(usdc.address, usdt.address);
-    await uniswapFactory.createPair(usdt.address, dai.address);
-    await uniswapFactory.createPair(usdc.address, dai.address);
-
-    await mineBlock();
-
-    const block = await ethers.provider.getBlock(
-        await ethers.provider.getBlockNumber()
-    );
-    await uniswapRouter.addLiquidity(
-        usdc.address,
-        usdt.address,
-        usdcAmount,
-        usdtAmount,
-        0,
-        0,
-        deployer.address,
-        block.timestamp + 100
-    );
-    await uniswapRouter.addLiquidity(
-        usdt.address,
-        dai.address,
-        usdtAmount,
-        daiAmount,
-        0,
-        0,
-        deployer.address,
-        block.timestamp + 100
-    );
-    await uniswapRouter.addLiquidity(
-        usdc.address,
-        dai.address,
-        usdcAmount,
-        daiAmount,
-        0,
-        0,
-        deployer.address,
-        block.timestamp + 100
-    );
+    const tokens = [usdc, usdt, dai, busd];
+    for (let i = 0; i < tokens.length; i++) {
+        for (let j = i + 1; j < tokens.length; j++) {
+            await addLiquidityUSD(
+                deployer,
+                uniswapRouter,
+                tokens[i],
+                tokens[j]
+            );
+        }
+    }
 
     // Deploy registry and pipelines
 
@@ -121,6 +114,10 @@ export async function setupContracts() {
         pureUniswapV2Pipeline.address
     );
     await registry.setVaultPipeline(dai.address, pureUniswapV2Pipeline.address);
+    await registry.setVaultPipeline(
+        busd.address,
+        pureUniswapV2Pipeline.address
+    );
 
     // Deploy factory
 
@@ -135,5 +132,14 @@ export async function setupContracts() {
 
     // Return instances
 
-    return { usdc, usdt, dai, registry, factory };
+    return {
+        usdc,
+        usdt,
+        dai,
+        busd,
+        uniswapRouter,
+        uniswapFactory,
+        registry,
+        factory,
+    };
 }
