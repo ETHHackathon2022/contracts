@@ -36,9 +36,30 @@ const config: HardhatUserConfig = {
                     },
                 },
             },
+            {
+                version: "0.6.6",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            {
+                version: "0.5.16",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
         ],
     },
     networks: {
+        forking: {
+            url: process.env.FORKING_RPC_URL,
+        },
         mainnet: ethereumConfig,
         ropsten: ethereumConfig,
         rinkeby: ethereumConfig,

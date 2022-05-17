@@ -1,60 +1,69 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./PipelineAdapter.sol";
+import "./interfaces/IIndex.sol";
 import "./interfaces/IRegistry.sol";
 import "./interfaces/IFactory.sol";
 
-contract Index is PipelineAdapter, ERC20, Ownable {
-    using SafeERC20 for IERC20;
+import "hardhat/console.sol";
 
-    struct Component {
-        address vault;
-    }
+contract Index is
+    IIndex,
+    PipelineAdapter,
+    ERC20Upgradeable,
+    OwnableUpgradeable
+{
+    using SafeERC20 for IERC20;
 
     Component[] public components;
 
     // CONSTRUCTOR
 
-    constructor(
-        string memory name_,
-        string memory symbol_,
+    function initialize(
+        string calldata name_,
+        string calldata symbol_,
         address owner_,
-        Component[] memory components_
-    ) ERC20(name_, symbol_) {
-        registry = IRegistry(IFactory(msg.sender).registry());
+        Component[] calldata components_,
+        uint256[] calldata weights_,
+        IERC20 tokenIn,
+        uint256 amount
+    ) external initializer {
+        require(components_.length == weights_.length, "Lenght mismatch");
 
+        // Dependencies init
+        __Ownable_init();
+        __ERC20_init(name_, symbol_);
+
+        // Setup fields
+        registry = IRegistry(IFactory(msg.sender).registry());
         transferOwnership(owner_);
 
-        for (uint256 i = 0; i < components_.length; i++) {
+        // Calculate total weight and add all components
+        uint256 totalWeight;
+        for (uint256 i = 0; i < weights_.length; i++) {
+            totalWeight += weights_[i];
             components.push(components_[i]);
         }
+
+        // Deposit to components with given weights
+        _depositAllComponents(weights_, totalWeight, 0, tokenIn, amount);
     }
 
     // PUBLIC FUNCTIONS
 
     function deposit(IERC20 tokenIn, uint256 amount) external {
+        // Get component prices and total prices
+        (uint256[] memory prices, uint256 totalPrice) = getComponentPrices();
+
         // Transfer token to address
         tokenIn.safeTransferFrom(msg.sender, address(this), amount);
 
-        // Get component prices and total prices
-        (uint256[] memory prices, uint256 totalPrice) = getComponentPrices();
-        uint256 boughtPrice;
-
-        // Deposit each component according to it's current share and sum bought prices
-        for (uint256 i = 0; i < components.length; i++) {
-            boughtPrice += _deposit(
-                components[i].vault,
-                tokenIn,
-                (amount * prices[i]) / totalPrice
-            );
-        }
-
-        // Mint i-tokens according to relating of bought price to current total price
-        _mint(msg.sender, (totalSupply() * boughtPrice) / totalPrice);
+        // Deposit to all components with current price share weights
+        _depositAllComponents(prices, totalPrice, totalPrice, tokenIn, amount);
     }
 
     function withdraw(IERC20 tokenOut, uint256 tokens)
@@ -166,5 +175,39 @@ contract Index is PipelineAdapter, ERC20, Ownable {
         returns (address[] memory)
     {
         return _getUnderlying(components[order].vault);
+    }
+
+    // INTERNAL FUNCTIONS
+
+    function _depositAllComponents(
+        uint256[] memory weights,
+        uint256 totalWeight,
+        uint256 currentTotalPrice,
+        IERC20 tokenIn,
+        uint256 amount
+    ) private {
+        console.log("Using token in %s", address(tokenIn));
+
+        // Deposit each component according to it's weight
+        uint256 boughtPrice;
+        for (uint256 i = 0; i < components.length; i++) {
+            console.log("Depositing to component %s", components[i].vault);
+
+            boughtPrice += _deposit(
+                components[i].vault,
+                tokenIn,
+                (amount * weights[i]) / totalWeight
+            );
+        }
+
+        // Mint i-tokens according to relating of bought price to current total price
+        if (currentTotalPrice == 0) {
+            _mint(msg.sender, boughtPrice);
+        } else {
+            _mint(
+                msg.sender,
+                (totalSupply() * boughtPrice) / currentTotalPrice
+            );
+        }
     }
 }

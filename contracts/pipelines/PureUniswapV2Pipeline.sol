@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "../interfaces/IPipeline.sol";
 
+import "hardhat/console.sol";
+
 contract PureUniswapV2Pipeline is IPipeline {
     string public constant PIPELINE_NAME = "PureUniswapV2Pipeline";
 
@@ -16,12 +18,14 @@ contract PureUniswapV2Pipeline is IPipeline {
     function deposit(
         IRegistry registry,
         address vault,
-        IERC20 tokenIn,
+        address tokenIn,
         uint256 amountIn
     ) external override returns (uint256 price) {
+        console.log("In pipeline's deposit");
+
         uint256 amountOut;
-        if (address(tokenIn) != vault) {
-            amountOut = _swap(registry, address(tokenIn), vault, amountIn);
+        if (tokenIn != vault) {
+            amountOut = _swap(registry, tokenIn, vault, amountIn);
         } else {
             amountOut = amountIn;
         }
@@ -33,19 +37,14 @@ contract PureUniswapV2Pipeline is IPipeline {
     function withdraw(
         IRegistry registry,
         address vault,
-        IERC20 tokenOut,
+        address tokenOut,
         uint256 shareNum,
         uint256 shareDenom
     ) external override returns (uint256 amountOut) {
         uint256 amountToWithdraw = (IERC20(vault).balanceOf(address(this)) *
             shareNum) / shareDenom;
-        if (address(tokenOut) != vault) {
-            amountOut = _swap(
-                registry,
-                vault,
-                address(tokenOut),
-                amountToWithdraw
-            );
+        if (tokenOut != vault) {
+            amountOut = _swap(registry, vault, tokenOut, amountToWithdraw);
         } else {
             amountOut = amountToWithdraw;
         }
@@ -84,10 +83,14 @@ contract PureUniswapV2Pipeline is IPipeline {
             registry.getPipelineData(ROUTER_SLOT),
             (address)
         );
+
+        console.log("Swapping with router %s", router);
+
         address[] memory path = new address[](2);
         (path[0], path[1]) = (from, to);
 
         IERC20(from).approve(router, type(uint256).max);
+        console.log("call swap");
         return
             IUniswapV2Router02(router).swapExactTokensForTokens(
                 amountIn,
