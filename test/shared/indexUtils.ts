@@ -1,6 +1,6 @@
 import { BigNumberish } from "ethers";
 import { ethers } from "hardhat";
-import { Index } from "../../typechain";
+import { VaultIndex } from "../../typechain";
 import chalk from "chalk";
 
 const { BigNumber } = ethers;
@@ -36,7 +36,7 @@ export function displayBlock(text: string, length: number, color: string) {
     process.stdout.write(chalk.bgHex(color).black(output));
 }
 
-export async function displayIndex(index: Index) {
+export async function displayIndex(index: VaultIndex) {
     const colors = [
         "#DDED7A", // Light yellow
         "#82DBD1", // Cyan

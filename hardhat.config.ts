@@ -10,6 +10,7 @@ import "hardhat-spdx-license-identifier";
 import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
+import "hardhat-dependency-compiler";
 import "./tasks";
 
 dotenv.config();
@@ -90,20 +91,8 @@ const config: HardhatUserConfig = {
                     ? [process.env.PRIVATE_KEY]
                     : [],
         },
-        mumbai: {
-            url: "https://rpc-mumbai.maticvigil.com/",
-            accounts:
-                process.env.PRIVATE_KEY !== undefined
-                    ? [process.env.PRIVATE_KEY]
-                    : [],
-        },
-        polygon: {
-            url: "https://rpc-mainnet.maticvigil.com/",
-            accounts:
-                process.env.PRIVATE_KEY !== undefined
-                    ? [process.env.PRIVATE_KEY]
-                    : [],
-        },
+        mumbai: ethereumConfig,
+        polygon: ethereumConfig,
     },
     gasReporter: {
         enabled: process.env.REPORT_GAS !== undefined,
@@ -115,6 +104,23 @@ const config: HardhatUserConfig = {
     spdxLicenseIdentifier: {
         overwrite: true,
         runOnCompile: true,
+    },
+    verify: {
+        etherscan: {
+            apiKey: process.env.ETHERSCAN_API_KEY,
+        },
+    },
+    external: {
+        contracts: [
+            {
+                artifacts: "@uniswap/v2-periphery/build",
+            },
+        ],
+    },
+    dependencyCompiler: {
+        paths: [
+            "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol",
+        ],
     },
 };
 

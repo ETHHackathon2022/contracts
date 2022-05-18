@@ -22,6 +22,16 @@ contract VaultIndex is
 
     uint96 public totalWeight;
 
+    // EVENTS
+
+    event Deposit(address account, address tokenIn, uint256 amount);
+
+    event Withdrawal(address account, address tokenOut, uint256 amount);
+
+    event ComponentAdded(Component component, uint256 order);
+
+    event ComponentRemoved(Component component, uint256 order);
+
     // CONSTRUCTOR
 
     function initialize(
@@ -73,6 +83,9 @@ contract VaultIndex is
                 (totalSupply() * boughtPrice) / currentTotalPrice
             );
         }
+
+        // Event
+        emit Deposit(msg.sender, address(tokenIn), amount);
     }
 
     function withdraw(IERC20 tokenOut, uint256 tokens)
@@ -95,6 +108,9 @@ contract VaultIndex is
 
         // Transfer obtained funds to sender
         tokenOut.safeTransfer(msg.sender, amountOut);
+
+        // Event
+        emit Withdrawal(msg.sender, address(tokenOut), amountOut);
     }
 
     // RESTRICTED PUBLIC FUNCTIONS
@@ -106,6 +122,9 @@ contract VaultIndex is
 
         // Rebalance to new component
         _targetComponent(components.length - 1);
+
+        // Emit event
+        emit ComponentAdded(component, components.length - 1);
     }
 
     function rebalanceFromTo(
@@ -125,7 +144,8 @@ contract VaultIndex is
         // Rebalance
         _targetComponent(order);
 
-        // Remove component from list
+        // Remove component from list and emit event
+        emit ComponentRemoved(components[order], order);
         components[order] = components[components.length - 1];
         components.pop();
     }

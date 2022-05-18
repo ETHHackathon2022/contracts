@@ -16,10 +16,18 @@ contract Factory is IFactory {
 
     address public indexMaster;
 
+    // EVENTS
+
+    event IndexCreated(address indexed index);
+
+    // CONSTRUCTOR
+
     constructor(address registry_, address indexMaster_) {
         registry = registry_;
         indexMaster = indexMaster_;
     }
+
+    // PUBLIC FUNCTIONS
 
     function createIndex(
         string calldata name,
@@ -28,5 +36,6 @@ contract Factory is IFactory {
     ) external returns (address index) {
         index = indexMaster.clone();
         IVaultIndex(index).initialize(name, symbol, msg.sender, components);
+        emit IndexCreated(index);
     }
 }

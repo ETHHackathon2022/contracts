@@ -42,7 +42,10 @@ task("addLiquidity", "Add liquidity to uniswap V2 pool")
         tx = await tokenBContract.mint(deployer, weiB);
         await tx.wait();
 
-        const routerContract = await getContractAt("UniswapV2Router02", router);
+        const routerContract = await getContractAt(
+            "IUniswapV2Router02",
+            router
+        );
 
         tx = await tokenAContract.approve(router, MaxUint256);
         await tx.wait();
