@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-ethers";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
+import "hardhat-spdx-license-identifier";
 import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
@@ -110,6 +111,10 @@ const config: HardhatUserConfig = {
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY,
+    },
+    spdxLicenseIdentifier: {
+        overwrite: true,
+        runOnCompile: true,
     },
 };
 

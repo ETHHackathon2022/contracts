@@ -64,9 +64,9 @@ export async function displayIndex(index: Index) {
     let totalLength = 100;
 
     for (let i = 0; i < prices.length; i++) {
-        const vault = await index.components(i);
+        const component = await index.components(i);
 
-        const token = await ethers.getContractAt("ERC20Mock", vault);
+        const token = await ethers.getContractAt("ERC20Mock", component.vault);
         const text =
             (await token.name()) +
             ": " +

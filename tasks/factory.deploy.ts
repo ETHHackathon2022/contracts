@@ -9,7 +9,7 @@ task("deploy:factory", "Deploy Factory contract")
         const { deployer } = await getNamedAccounts();
 
         const indexMaster = await deploy("IndexMaster", {
-            contract: "Index",
+            contract: "VaultIndex",
             from: deployer,
             log: true,
         });
