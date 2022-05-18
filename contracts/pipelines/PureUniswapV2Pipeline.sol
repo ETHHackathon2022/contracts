@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "../interfaces/IPipeline.sol";
 
@@ -64,7 +64,13 @@ contract PureUniswapV2Pipeline is IPipeline {
         address account
     ) external view override returns (uint256) {
         // TODO: Here should be actual price estimation using pricefeeds
-        return IERC20(vault).balanceOf(account);
+        uint256 balance = IERC20(vault).balanceOf(account);
+        uint8 decimals = IERC20Metadata(vault).decimals();
+        if (decimals < 18) {
+            return balance * 10**(18 - decimals);
+        } else {
+            return balance / 10**(decimals - 18);
+        }
     }
 
     // INTERNAL FUNCTIONS

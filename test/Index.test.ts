@@ -1,35 +1,14 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumberish } from "ethers";
-import { ethers } from "hardhat";
-import {
-    ERC20Mock,
-    Factory,
-    Registry,
-    UniswapRouter,
-    Index,
-} from "../typechain";
-import { setupContracts } from "./shared/setupContracts";
+import { deployments, ethers, network, run } from "hardhat";
+import { ERC20Mock, Factory, Index } from "../typechain";
 import { both } from "./shared/utils";
+import { displayIndex } from "./shared/indexUtils";
 
+const { getContract, getSigners } = ethers;
 const { MaxUint256 } = ethers.constants;
 const { parseUnits } = ethers.utils;
-
-async function displayComponents(index: Index, numComponents: number) {
-    for (let i = 0; i < numComponents; i++) {
-        const vault = await index.components(i);
-
-        const token = await ethers.getContractAt("ERC20Mock", vault);
-        console.log(
-            (await token.name()) +
-                ": " +
-                ethers.utils.formatUnits(
-                    await token.balanceOf(index.address),
-                    await token.decimals()
-                )
-        );
-    }
-}
 
 describe("Test Indexes", function () {
     let owner: SignerWithAddress, other: SignerWithAddress;
@@ -38,11 +17,34 @@ describe("Test Indexes", function () {
         dai: ERC20Mock,
         busd: ERC20Mock,
         factory: Factory;
+    let snapshotId: any;
 
-    this.beforeEach(async function () {
-        [owner, other] = await ethers.getSigners();
+    before(async function () {
+        [owner, other] = await getSigners();
 
-        ({ usdc, usdt, dai, busd, factory } = await setupContracts());
+        await deployments.fixture();
+
+        await run("setup");
+
+        usdc = await getContract("USDC");
+        usdt = await getContract("USDT");
+        dai = await getContract("DAI");
+        busd = await getContract("BUSD");
+        factory = await getContract("Factory");
+    });
+
+    beforeEach(async function () {
+        snapshotId = await network.provider.request({
+            method: "evm_snapshot",
+            params: [],
+        });
+    });
+
+    afterEach(async function () {
+        snapshotId = await network.provider.request({
+            method: "evm_revert",
+            params: [snapshotId],
+        });
     });
 
     describe("Index with pure tokens", function () {
@@ -90,19 +92,19 @@ describe("Test Indexes", function () {
                 expect(await index.components(i)).to.equal(components[i].vault);
             }
 
-            await displayComponents(index, 3);
+            await displayIndex(index);
         });
 
         it("rebalancing should work", async function () {
             await index.rebalanceComponent(1, 2, 50, 100);
 
-            await displayComponents(index, 3);
+            await displayIndex(index);
         });
 
         it("removing with rebalancing should work", async function () {
             await index.removeComponent(2);
 
-            await displayComponents(index, 2);
+            await displayIndex(index);
         });
 
         it("adding with rebalancing should work", async function () {
@@ -113,7 +115,7 @@ describe("Test Indexes", function () {
                 100
             );
 
-            await displayComponents(index, 4);
+            await displayIndex(index);
         });
     });
 });
