@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.13;
 
@@ -9,6 +9,10 @@ contract Registry is IRegistry, Ownable {
     mapping(address => address) public getVaultPipeline;
 
     mapping(bytes32 => bytes) public getPipelineData;
+
+    address public defaultUniswapV2Router;
+
+    mapping(address => mapping(address => SwapData)) private _swapData;
 
     // RESTRICTED FUNCTIONS
 
@@ -24,5 +28,23 @@ contract Registry is IRegistry, Ownable {
         onlyOwner
     {
         getPipelineData[slot] = data;
+    }
+
+    function setDefaultUniswapV2Router(address router) external onlyOwner {
+        defaultUniswapV2Router = router;
+    }
+
+    // VIEW FUNCTIONS
+
+    function getSwapData(address from, address to)
+        external
+        view
+        returns (SwapData memory)
+    {
+        if (_swapData[from][to].swapType != SwapType.None) {
+            return _swapData[from][to];
+        } else {
+            return _swapData[to][from];
+        }
     }
 }

@@ -9,4 +9,4 @@ const deployFunction: DeployFunction = async function ({
 
 export default deployFunction;
 
-deployFunction.tags = ["Registry"];
+deployFunction.tags = ["Registry", "Production"];

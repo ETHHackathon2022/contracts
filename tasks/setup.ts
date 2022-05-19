@@ -1,5 +1,6 @@
 import { task } from "hardhat/config";
 import chalk from "chalk";
+import { Registry, PoolMock } from "../typechain-types";
 
 function writeStartLine(text: string) {
     const blankSpace = Array(100)
@@ -14,13 +15,7 @@ function writeStep(text = "") {
 
 task("setup", "Setup initial contracts").setAction(async function (
     { _ },
-    {
-        run,
-        ethers: {
-            getContract,
-            utils: { keccak256, concat, toUtf8Bytes, defaultAbiCoder },
-        },
-    }
+    { run, ethers: { getContract } }
 ) {
     writeStartLine("Starting set up...");
 
@@ -47,35 +42,58 @@ task("setup", "Setup initial contracts").setAction(async function (
         }
     }
 
+    // Swap data
+
+    writeStep("setting default uniswapv2 router");
+
+    const registry = await getContract<Registry>("Registry");
+    const uniswapRouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+
+    const tx = await registry.setDefaultUniswapV2Router(uniswapRouter);
+    await tx.wait();
+
+    // Aave V3 Mock
+
+    writeStep("configuring aave v3 mock");
+
+    const aavePool = await getContract<PoolMock>("AaveV3Pool");
+
+    for (let token of tokens) {
+        const aaveTx = await aavePool.addAsset(token.address);
+        await aaveTx.wait();
+    }
+
     // Set pipelines
     writeStep("adding pipelines");
 
-    // Pure Uniswap V2 Pipeline
+    // Pure Pipeline
 
-    writeStep("setting pure uniswapv2 pipeline data");
+    writeStep("adding pure pipeline");
 
-    const pureUniswapV2Pipeline = await getContract("PureUniswapV2Pipeline");
-    const registry = await getContract("Registry");
-    const uniswapRouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-
-    const slot = keccak256(
-        concat([
-            toUtf8Bytes(await pureUniswapV2Pipeline.PIPELINE_NAME()),
-            toUtf8Bytes("router"),
-        ])
-    );
-    const data = defaultAbiCoder.encode(["address"], [uniswapRouter]);
-    const tx = await registry.setPipelineData(slot, data);
-    await tx.wait();
-
-    writeStep("adding pure uniswap2 pipeline");
+    const purePipeline = await getContract("PurePipeline");
 
     const vaults = tokens;
     for (let vault of vaults) {
         writeStep(`adding for vault ${await vault.name()}`);
         const tx1 = await registry.setVaultPipeline(
             vault.address,
-            pureUniswapV2Pipeline.address
+            purePipeline.address
+        );
+        await tx1.wait();
+    }
+
+    // Aave Pipeline
+
+    writeStep("adding aave v3 pipeline");
+
+    const aaveV3Pipeline = await getContract("AaveV3Pipeline");
+
+    for (let vault of vaults) {
+        writeStep(`adding for aave v3 - ${await vault.name()}`);
+        const aToken = await aavePool.aTokens(vault.address);
+        const tx1 = await registry.setVaultPipeline(
+            aToken,
+            aaveV3Pipeline.address
         );
         await tx1.wait();
     }

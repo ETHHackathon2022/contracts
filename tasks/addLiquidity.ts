@@ -1,6 +1,6 @@
 import { parseUnits } from "ethers/lib/utils";
 import { task } from "hardhat/config";
-import { ERC20Mock, UniswapV2Router02 } from "../typechain";
+import { ERC20Mock } from "../typechain-types";
 
 const defaultParams = {
     router: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",

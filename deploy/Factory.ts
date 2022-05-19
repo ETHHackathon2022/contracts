@@ -11,4 +11,4 @@ export default deployFunction;
 
 deployFunction.dependencies = ["Registry"];
 
-deployFunction.tags = ["Factory"];
+deployFunction.tags = ["Factory", "Production"];

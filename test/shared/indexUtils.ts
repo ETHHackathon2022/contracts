@@ -1,6 +1,6 @@
 import { BigNumberish } from "ethers";
 import { ethers } from "hardhat";
-import { VaultIndex } from "../../typechain";
+import { VaultIndex } from "../../typechain-types";
 import chalk from "chalk";
 
 const { BigNumber } = ethers;

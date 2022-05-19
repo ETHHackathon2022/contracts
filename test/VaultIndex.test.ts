@@ -2,7 +2,13 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumberish } from "ethers";
 import { deployments, ethers, network, run } from "hardhat";
-import { ERC20Mock, Factory, VaultIndex } from "../typechain";
+import {
+    ATokenMock,
+    ERC20Mock,
+    Factory,
+    PoolMock,
+    VaultIndex,
+} from "../typechain-types";
 import { both } from "./shared/utils";
 import { displayIndex } from "./shared/indexUtils";
 
@@ -47,16 +53,14 @@ describe("Test Indexes", function () {
         });
     });
 
-    describe("Index with pure tokens", function () {
-        let indexName: string,
-            indexSymbol: string,
-            components: { vault: string; targetWeight: number }[],
-            weights: number[],
-            weightsTotal: number,
-            buyCurrency: ERC20Mock,
-            buyAmount: BigNumberish;
-        let index: VaultIndex;
+    let indexName: string,
+        indexSymbol: string,
+        components: { vault: string; targetWeight: number }[],
+        buyCurrency: ERC20Mock,
+        buyAmount: BigNumberish;
+    let index: VaultIndex;
 
+    /*describe("Index with pure tokens", function () {
         this.beforeEach(async function () {
             indexName = "MyIndex";
             indexSymbol = "MID";
@@ -77,9 +81,9 @@ describe("Test Indexes", function () {
             ]);
             index = await getContractAt("VaultIndex", reply);
 
-            await usdc.mint(owner.address, parseUnits("100", 6));
+            await usdc.mint(owner.address, buyAmount);
             await usdc.approve(index.address, MaxUint256);
-            await index.deposit(usdc.address, parseUnits("100", 6));
+            await index.deposit(usdc.address, buyAmount);
         });
 
         it("index parameters should be correct", async function () {
@@ -114,6 +118,71 @@ describe("Test Indexes", function () {
                 vault: busd.address,
                 targetWeight: 100,
             });
+
+            await displayIndex(index);
+        });
+    });*/
+
+    describe("Index with pure and aave vaults", async function () {
+        let aavePool: PoolMock;
+
+        this.beforeEach(async function () {
+            indexName = "AaveIndex";
+            indexSymbol = "AVI";
+            aavePool = await getContract<PoolMock>("AaveV3Pool");
+            components = [
+                { vault: usdc.address, targetWeight: 300 },
+                {
+                    vault: await aavePool.aTokens(dai.address),
+                    targetWeight: 600,
+                },
+            ];
+            buyCurrency = usdc;
+            buyAmount = parseUnits("1000", 6);
+
+            const { reply } = await both(factory, "createIndex", [
+                indexName,
+                indexSymbol,
+                components,
+            ]);
+            index = await getContractAt("VaultIndex", reply);
+
+            await usdc.mint(owner.address, buyAmount);
+            await usdc.approve(index.address, MaxUint256);
+            await index.deposit(usdc.address, buyAmount);
+        });
+
+        it("index parameters should be correct", async function () {
+            expect(await index.name()).to.equal(indexName);
+            expect(await index.symbol()).to.equal(indexSymbol);
+
+            for (let i = 0; i < components.length; i++) {
+                const component = await index.components(i);
+                expect(component.vault).to.equal(components[i].vault);
+                expect(component.targetWeight).to.equal(
+                    components[i].targetWeight
+                );
+            }
+
+            await displayIndex(index);
+        });
+
+        it("Can add new aToken", async function () {
+            await index.addComponent({
+                vault: await aavePool.aTokens(usdt.address),
+                targetWeight: 450,
+            });
+
+            await displayIndex(index);
+        });
+
+        it("Can add and remove a Token", async function () {
+            await index.addComponent({
+                vault: await aavePool.aTokens(usdt.address),
+                targetWeight: 450,
+            });
+
+            await index.removeComponent(0);
 
             await displayIndex(index);
         });

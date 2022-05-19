@@ -1,7 +1,8 @@
 import "./erc20Mock.deploy";
-import "./uniswapV2.deploy";
 import "./addLiquidity";
 import "./setup";
 import "./registry.deploy";
 import "./factory.deploy";
-import "./pureUniswapV2Pipeline.deploy";
+import "./purePipeline.deploy";
+import "./aaveV3Mock.deploy";
+import "./aaveV3Pipeline.deploy";
