@@ -7,6 +7,8 @@ interface IRegistry {
 
     function getPipelineData(bytes32 slot) external view returns (bytes memory);
 
+    function isTokenWhitelisted(address token) external view returns (bool);
+
     enum SwapType {
         None,
         UniswapV2

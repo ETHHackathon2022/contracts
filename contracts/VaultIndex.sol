@@ -49,6 +49,10 @@ contract VaultIndex is
         transferOwnership(owner_);
         uint96 totalWeight_;
         for (uint256 i = 0; i < components_.length; i++) {
+            require(
+                registry.getVaultPipeline(components_[i].vault) != address(0),
+                "Unsupported vault"
+            );
             components.push(components_[i]);
             totalWeight_ += components_[i].targetWeight;
         }
@@ -58,6 +62,11 @@ contract VaultIndex is
     // PUBLIC FUNCTIONS
 
     function deposit(IERC20 tokenIn, uint256 amount) external {
+        require(
+            registry.isTokenWhitelisted(address(tokenIn)),
+            "Unsupported token in"
+        );
+
         // Get component prices and total prices
         (, uint256 currentTotalPrice) = getComponentPrices();
 
@@ -92,6 +101,11 @@ contract VaultIndex is
         external
         returns (uint256 amountOut)
     {
+        require(
+            registry.isTokenWhitelisted(address(tokenOut)),
+            "Unsupported token out"
+        );
+
         // Burn i-tokens from sender address
         uint256 supply = totalSupply();
         _burn(msg.sender, tokens);
@@ -116,6 +130,11 @@ contract VaultIndex is
     // RESTRICTED PUBLIC FUNCTIONS
 
     function addComponent(Component memory component) external onlyOwner {
+        require(
+            registry.getVaultPipeline(component.vault) != address(0),
+            "Unsupported vault"
+        );
+
         // Add component to list
         components.push(component);
         totalWeight += component.targetWeight;

@@ -10,6 +10,8 @@ contract Registry is IRegistry, Ownable {
 
     mapping(bytes32 => bytes) public getPipelineData;
 
+    mapping(address => bool) public isTokenWhitelisted;
+
     address public defaultUniswapV2Router;
 
     mapping(address => mapping(address => SwapData)) private _swapData;
@@ -28,6 +30,13 @@ contract Registry is IRegistry, Ownable {
         onlyOwner
     {
         getPipelineData[slot] = data;
+    }
+
+    function setTokenWhitelisted(address token, bool whitelisted)
+        external
+        onlyOwner
+    {
+        isTokenWhitelisted[token] = whitelisted;
     }
 
     function setDefaultUniswapV2Router(address router) external onlyOwner {

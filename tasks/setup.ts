@@ -19,8 +19,11 @@ task("setup", "Setup initial contracts").setAction(async function (
 ) {
     writeStartLine("Starting set up...");
 
-    // Add liquidity to all default pairs
-    writeStep("adding liquidity");
+    // Whitelist tokens
+
+    writeStep("whitelisting tokens");
+
+    const registry = await getContract<Registry>("Registry");
 
     const tokens = [
         await getContract("USDC"),
@@ -28,6 +31,16 @@ task("setup", "Setup initial contracts").setAction(async function (
         await getContract("DAI"),
         await getContract("BUSD"),
     ];
+
+    for (let token of tokens) {
+        writeStep(`whitelisting ${await token.name()}`);
+        const wTx = await registry.setTokenWhitelisted(token.address, true);
+        await wTx.wait();
+    }
+
+    // Add liquidity to all default pairs
+    writeStep("adding liquidity");
+
     const amountToAdd = "10000000";
     for (let i = 0; i < tokens.length; i++) {
         for (let j = i + 1; j < tokens.length; j++) {
@@ -46,7 +59,6 @@ task("setup", "Setup initial contracts").setAction(async function (
 
     writeStep("setting default uniswapv2 router");
 
-    const registry = await getContract<Registry>("Registry");
     const uniswapRouter = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 
     const tx = await registry.setDefaultUniswapV2Router(uniswapRouter);
