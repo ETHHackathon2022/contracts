@@ -8,6 +8,7 @@ import {
     Factory,
     PoolMock,
     VaultIndex,
+    YearnFactoryMock,
 } from "../typechain-types";
 import { both } from "./shared/utils";
 import { displayIndex } from "./shared/indexUtils";
@@ -123,7 +124,7 @@ describe("Test Indexes", function () {
         });
     });*/
 
-    describe("Index with pure and aave vaults", async function () {
+    /*describe("Index with pure and aave vaults", async function () {
         let aavePool: PoolMock;
 
         this.beforeEach(async function () {
@@ -184,6 +185,45 @@ describe("Test Indexes", function () {
 
             await index.removeComponent(0);
 
+            await displayIndex(index);
+        });
+    });*/
+
+    describe("Index with yearn vaults", async function () {
+        let yearnFactory: YearnFactoryMock;
+
+        this.beforeEach(async function () {
+            indexName = "YearnStableIndex";
+            indexSymbol = "YSI";
+            yearnFactory = await getContract<YearnFactoryMock>(
+                "YearnFactoryMock"
+            );
+            components = [
+                {
+                    vault: await yearnFactory.vaultFor(usdc.address),
+                    targetWeight: 400,
+                },
+                {
+                    vault: await await yearnFactory.vaultFor(dai.address),
+                    targetWeight: 400,
+                },
+            ];
+            buyCurrency = usdc;
+            buyAmount = parseUnits("500", 6);
+
+            const { reply } = await both(factory, "createIndex", [
+                indexName,
+                indexSymbol,
+                components,
+            ]);
+            index = await getContractAt("VaultIndex", reply);
+
+            await usdc.mint(owner.address, buyAmount);
+            await usdc.approve(index.address, MaxUint256);
+            await index.deposit(usdc.address, buyAmount);
+        });
+
+        it("index should be correct", async function () {
             await displayIndex(index);
         });
     });

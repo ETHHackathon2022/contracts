@@ -1,8 +1,8 @@
-import "./erc20Mock.deploy";
+import "./deploy/erc20Mock.deploy";
+import "./deploy/pipeline.deploy";
+import "./deploy/aaveV3Mock.deploy";
+import "./deploy/yearnFactoryMock.deploy";
+import "./deploy/factory.deploy";
+import "./deploy/registry.deploy";
 import "./addLiquidity";
 import "./setup";
-import "./registry.deploy";
-import "./factory.deploy";
-import "./purePipeline.deploy";
-import "./aaveV3Mock.deploy";
-import "./aaveV3Pipeline.deploy";

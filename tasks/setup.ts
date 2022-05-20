@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import chalk from "chalk";
-import { Registry, PoolMock } from "../typechain-types";
+import { Registry, PoolMock, YearnFactoryMock } from "../typechain-types";
 
 function writeStartLine(text: string) {
     const blankSpace = Array(100)
@@ -106,6 +106,27 @@ task("setup", "Setup initial contracts").setAction(async function (
         const tx1 = await registry.setVaultPipeline(
             aToken,
             aaveV3Pipeline.address
+        );
+        await tx1.wait();
+    }
+
+    // Yearn Single Token Pipeline
+
+    writeStep("adding yearn single token pipeline");
+
+    const yearnSingleTokenPipeline = await getContract(
+        "YearnSingleTokenPipeline"
+    );
+    const yearnFactory = await getContract<YearnFactoryMock>(
+        "YearnFactoryMock"
+    );
+
+    for (let token of tokens) {
+        writeStep(`adding for yearn single token - ${await token.name()}`);
+        const yearnVault = await yearnFactory.vaultFor(token.address);
+        const tx1 = await registry.setVaultPipeline(
+            yearnVault,
+            yearnSingleTokenPipeline.address
         );
         await tx1.wait();
     }

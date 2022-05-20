@@ -28,4 +28,4 @@ const deployFunction: DeployFunction = async function ({
 
 export default deployFunction;
 
-deployFunction.tags = ["Tokens", "Production"];
+deployFunction.tags = ["Tokens"];

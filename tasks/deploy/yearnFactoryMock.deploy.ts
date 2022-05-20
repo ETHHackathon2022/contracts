@@ -1,10 +1,9 @@
 import { task } from "hardhat/config";
 
-task("deploy:aaveV3Pipeline", "Deploy AaveV3Pipeline contract").setAction(
+task("deploy:yearnFactoryMock", "Deploy Yearn factory mock contract").setAction(
     async function ({ _ }, { getNamedAccounts, deployments: { deploy } }) {
         const { deployer } = await getNamedAccounts();
-
-        return await deploy("AaveV3Pipeline", {
+        return await deploy("YearnFactoryMock", {
             from: deployer,
             args: [],
             log: true,

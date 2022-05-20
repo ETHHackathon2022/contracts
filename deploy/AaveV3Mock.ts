@@ -4,7 +4,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 const deployFunction: DeployFunction = async function ({
     run,
 }: HardhatRuntimeEnvironment) {
-    await run("deploy:aaveV3Mock", {});
+    await run("deploy:aaveV3Mock");
 };
 
 export default deployFunction;
