@@ -9,6 +9,8 @@ interface IRegistry {
 
     function isTokenWhitelisted(address token) external view returns (bool);
 
+    function getPriceFeed(address token) external view returns (address);
+
     enum SwapType {
         None,
         UniswapV2

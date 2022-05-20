@@ -23,11 +23,13 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     }
 });
 
-const ethereumConfig = {
-    url: process.env.RPC_URL || "",
+const networkConfig = (url: string | null | undefined) => ({
+    url: url || "",
     accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-};
+});
+
+const defaultNetworkConfig = networkConfig(process.env.RPC_URL);
 
 const config: HardhatUserConfig = {
     solidity: {
@@ -73,26 +75,17 @@ const config: HardhatUserConfig = {
                 blockNumber: 14791509,
             },
         },
-        mainnet: ethereumConfig,
-        ropsten: ethereumConfig,
-        rinkeby: ethereumConfig,
-        kovan: ethereumConfig,
-        BSCTest: {
-            url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
-            accounts:
-                process.env.PRIVATE_KEY !== undefined
-                    ? [process.env.PRIVATE_KEY]
-                    : [],
-        },
-        BSC: {
-            url: "https://bsc-dataseed.binance.org/",
-            accounts:
-                process.env.PRIVATE_KEY !== undefined
-                    ? [process.env.PRIVATE_KEY]
-                    : [],
-        },
-        mumbai: ethereumConfig,
-        polygon: ethereumConfig,
+        mainnet: defaultNetworkConfig,
+        ropsten: defaultNetworkConfig,
+        rinkeby: defaultNetworkConfig,
+        kovan: defaultNetworkConfig,
+        BSCTest: networkConfig(
+            "https://data-seed-prebsc-1-s1.binance.org:8545/"
+        ),
+        BSC: networkConfig("https://bsc-dataseed.binance.org/"),
+        fantom: networkConfig("https://rpc.ftm.tools/"),
+        mumbai: defaultNetworkConfig,
+        polygon: defaultNetworkConfig,
     },
     gasReporter: {
         enabled: process.env.REPORT_GAS !== undefined,

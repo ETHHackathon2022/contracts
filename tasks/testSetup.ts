@@ -13,7 +13,7 @@ function writeStep(text = "") {
     writeStartLine("Setting up: " + text);
 }
 
-task("setup", "Setup initial contracts").setAction(async function (
+task("testSetup", "Setup initial contracts").setAction(async function (
     { _ },
     { run, ethers: { getContract } }
 ) {

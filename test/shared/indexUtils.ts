@@ -52,7 +52,7 @@ export async function displayIndex(index: VaultIndex) {
         (await index.symbol()) +
         ") | " +
         "Total price: " +
-        formatUnitsWithPrecision(totalPrice, 18, 2) +
+        formatUnitsWithPrecision(totalPrice, 8, 2) +
         " USD";
     console.log(chalk.bold(header));
 
@@ -61,7 +61,7 @@ export async function displayIndex(index: VaultIndex) {
         return;
     }
 
-    let totalLength = 100;
+    let totalLength = 200;
 
     for (let i = 0; i < prices.length; i++) {
         const component = await index.components(i);
@@ -74,7 +74,10 @@ export async function displayIndex(index: VaultIndex) {
                 await token.balanceOf(index.address),
                 await token.decimals(),
                 2
-            );
+            ) +
+            " (W: " +
+            component.targetWeight +
+            ")";
         const length = BigNumber.from(totalLength)
             .mul(prices[i])
             .div(totalPrice)

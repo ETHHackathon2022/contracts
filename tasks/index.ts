@@ -5,4 +5,5 @@ import "./deploy/yearnFactoryMock.deploy";
 import "./deploy/factory.deploy";
 import "./deploy/registry.deploy";
 import "./addLiquidity";
-import "./setup";
+import "./testSetup";
+import "./fantomSetup";

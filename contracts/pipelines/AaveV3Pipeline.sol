@@ -3,12 +3,14 @@
 pragma solidity ^0.8.13;
 
 import "../libraries/Swaps.sol";
+import "../libraries/Prices.sol";
 import "../interfaces/IPipeline.sol";
 import "../interfaces/aave-v3/IAToken.sol";
 import "../interfaces/aave-v3/IPool.sol";
 
 contract AaveV3Pipeline is IPipeline {
     using Swaps for IRegistry;
+    using Prices for IRegistry;
 
     string public constant PIPELINE_NAME = "AaveV3Pipeline";
 
@@ -33,8 +35,7 @@ contract AaveV3Pipeline is IPipeline {
         IERC20(underlying).approve(pool, supplyAmount);
         IPool(pool).supply(underlying, supplyAmount, address(this), 0);
 
-        // TODO: Here should be actual price estimation using pricefeeds
-        price = supplyAmount;
+        price = registry.toUSD(underlying, supplyAmount);
     }
 
     function withdraw(
@@ -75,17 +76,12 @@ contract AaveV3Pipeline is IPipeline {
     }
 
     function getPrice(
-        IRegistry,
+        IRegistry registry,
         address vault,
         address account
     ) external view override returns (uint256) {
-        // TODO: Here should be actual price estimation using pricefeeds
         uint256 balance = IAToken(vault).balanceOf(account);
-        uint8 decimals = IAToken(vault).decimals();
-        if (decimals < 18) {
-            return balance * 10**(18 - decimals);
-        } else {
-            return balance / 10**(decimals - 18);
-        }
+        return
+            registry.toUSD(IAToken(vault).UNDERLYING_ASSET_ADDRESS(), balance);
     }
 }

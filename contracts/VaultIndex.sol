@@ -20,7 +20,7 @@ contract VaultIndex is
 
     Component[] public components;
 
-    uint96 public totalWeight;
+    uint256 public totalWeight;
 
     // EVENTS
 
@@ -47,7 +47,7 @@ contract VaultIndex is
         // Setup fields
         registry = IRegistry(IFactory(msg.sender).registry());
         transferOwnership(owner_);
-        uint96 totalWeight_;
+        uint256 totalWeight_;
         for (uint256 i = 0; i < components_.length; i++) {
             require(
                 registry.getVaultPipeline(components_[i].vault) != address(0),
@@ -147,12 +147,28 @@ contract VaultIndex is
     }
 
     function rebalanceFromTo(
-        uint256 orderDecrease,
-        uint256 orderIncrease,
+        uint256 od,
+        uint256 oi,
         uint256 shareNum,
-        uint256 shareDenom
+        uint256 shareDenom,
+        bool adjustWeight
     ) external onlyOwner {
-        _rebalanceFromTo(orderDecrease, orderIncrease, shareNum, shareDenom);
+        _rebalanceFromTo(od, oi, shareNum, shareDenom);
+        if (adjustWeight) {
+            (
+                uint256[] memory prices,
+                uint256 totalPrice
+            ) = getComponentPrices();
+            Component storage cd = components[od];
+            Component storage ci = components[oi];
+            uint256 otherPrice = totalPrice - prices[od] - prices[oi];
+            uint256 otherWeights = totalWeight -
+                cd.targetWeight -
+                ci.targetWeight;
+            cd.targetWeight = (otherWeights * prices[od]) / otherPrice;
+            ci.targetWeight = (otherWeights * prices[oi]) / otherPrice;
+            totalWeight = otherWeights + cd.targetWeight + ci.targetWeight;
+        }
     }
 
     function removeComponent(uint256 order) external onlyOwner {
@@ -171,6 +187,28 @@ contract VaultIndex is
 
     function targetComponent(uint256 order) external onlyOwner {
         _targetComponent(order);
+    }
+
+    function setTargetWeights(uint256[] calldata weights) external onlyOwner {
+        require(weights.length == components.length, "Invalid weights length");
+        uint256 newTotalWeight;
+        for (uint256 i = 0; i < weights.length; i++) {
+            components[i].targetWeight = weights[i];
+            newTotalWeight += weights[i];
+        }
+        totalWeight = newTotalWeight;
+    }
+
+    function adjustWeights() external onlyOwner {
+        (uint256[] memory prices, uint256 totalPrice) = getComponentPrices();
+        uint256 newTotalWeight = 1_000_000_000;
+        uint256 realTotalWeight;
+        for (uint256 i = 0; i < prices.length; i++) {
+            uint256 weight = (newTotalWeight * prices[i]) / totalPrice;
+            realTotalWeight += weight;
+            components[i].targetWeight = weight;
+        }
+        totalWeight = realTotalWeight;
     }
 
     // PUBLIC VIEW FUNCTIONS
@@ -206,24 +244,24 @@ contract VaultIndex is
     // PRIVATE FUNCTIONS
 
     function _rebalanceFromTo(
-        uint256 orderDecrease,
-        uint256 orderIncrease,
+        uint256 od,
+        uint256 oi,
         uint256 shareNum,
         uint256 shareDenom
     ) private {
         // Get intermediate token
-        IERC20 through = IERC20(getComponentUnderlying(orderIncrease)[0]);
+        IERC20 through = IERC20(getComponentUnderlying(oi)[0]);
 
         // Withdraw first component to this token
         uint256 sellPrice = _withdraw(
-            components[orderDecrease].vault,
+            components[od].vault,
             through,
             shareNum,
             shareDenom
         );
 
         // Deposit to second components with this token
-        _deposit(components[orderIncrease].vault, through, sellPrice);
+        _deposit(components[oi].vault, through, sellPrice);
     }
 
     function _targetComponent(uint256 order) private {

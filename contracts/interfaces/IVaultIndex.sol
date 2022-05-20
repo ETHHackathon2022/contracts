@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IVaultIndex {
     struct Component {
         address vault;
-        uint96 targetWeight;
+        uint256 targetWeight;
     }
 
     function initialize(

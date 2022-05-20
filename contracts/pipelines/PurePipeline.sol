@@ -4,10 +4,12 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "../libraries/Swaps.sol";
+import "../libraries/Prices.sol";
 import "../interfaces/IPipeline.sol";
 
 contract PurePipeline is IPipeline {
     using Swaps for IRegistry;
+    using Prices for IRegistry;
 
     string public constant PIPELINE_NAME = "PurePipeline";
 
@@ -26,8 +28,7 @@ contract PurePipeline is IPipeline {
             amountOut = amountIn;
         }
 
-        // TODO: Here should be actual price estimation using pricefeeds
-        price = amountOut;
+        price = registry.toUSD(vault, amountOut);
     }
 
     function withdraw(
@@ -59,17 +60,11 @@ contract PurePipeline is IPipeline {
     }
 
     function getPrice(
-        IRegistry,
+        IRegistry registry,
         address vault,
         address account
     ) external view override returns (uint256) {
-        // TODO: Here should be actual price estimation using pricefeeds
         uint256 balance = IERC20(vault).balanceOf(account);
-        uint8 decimals = IERC20Metadata(vault).decimals();
-        if (decimals < 18) {
-            return balance * 10**(18 - decimals);
-        } else {
-            return balance / 10**(decimals - 18);
-        }
+        return registry.toUSD(vault, balance);
     }
 }

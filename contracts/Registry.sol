@@ -12,6 +12,8 @@ contract Registry is IRegistry, Ownable {
 
     mapping(address => bool) public isTokenWhitelisted;
 
+    mapping(address => address) public getPriceFeed;
+
     address public defaultUniswapV2Router;
 
     mapping(address => mapping(address => SwapData)) private _swapData;
@@ -37,6 +39,10 @@ contract Registry is IRegistry, Ownable {
         onlyOwner
     {
         isTokenWhitelisted[token] = whitelisted;
+    }
+
+    function setPriceFeed(address token, address feed) external onlyOwner {
+        getPriceFeed[token] = feed;
     }
 
     function setDefaultUniswapV2Router(address router) external onlyOwner {

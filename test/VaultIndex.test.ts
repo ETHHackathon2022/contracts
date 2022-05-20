@@ -31,7 +31,7 @@ describe("Test Indexes", function () {
 
         await deployments.fixture();
 
-        await run("setup");
+        await run("testSetup");
 
         usdc = await getContract("USDC");
         usdt = await getContract("USDT");
@@ -61,7 +61,7 @@ describe("Test Indexes", function () {
         buyAmount: BigNumberish;
     let index: VaultIndex;
 
-    /*describe("Index with pure tokens", function () {
+    describe("Index with pure tokens", function () {
         this.beforeEach(async function () {
             indexName = "MyIndex";
             indexSymbol = "MID";
@@ -70,8 +70,6 @@ describe("Test Indexes", function () {
                 { vault: usdt.address, targetWeight: 300 },
                 { vault: dai.address, targetWeight: 300 },
             ];
-            weights = [1, 1, 1];
-            weightsTotal = 3;
             buyCurrency = usdc;
             buyAmount = parseUnits("100", 6);
 
@@ -103,7 +101,7 @@ describe("Test Indexes", function () {
         });
 
         it("rebalancing should work", async function () {
-            await index.rebalanceFromTo(1, 2, 50, 100);
+            await index.rebalanceFromTo(1, 2, 50, 100, true);
 
             await displayIndex(index);
         });
@@ -122,7 +120,7 @@ describe("Test Indexes", function () {
 
             await displayIndex(index);
         });
-    });*/
+    });
 
     /*describe("Index with pure and aave vaults", async function () {
         let aavePool: PoolMock;
@@ -224,6 +222,33 @@ describe("Test Indexes", function () {
         });
 
         it("index should be correct", async function () {
+            await displayIndex(index);
+        });
+
+        it("operational workflow should work", async function () {
+            buyAmount = parseUnits("800", 6);
+            await usdc.mint(other.address, buyAmount);
+            await usdc.connect(other).approve(index.address, MaxUint256);
+            await index.connect(other).deposit(usdc.address, buyAmount);
+
+            await displayIndex(index);
+
+            buyAmount = parseUnits("350", 6);
+            await usdc.mint(owner.address, buyAmount);
+            await index.deposit(usdc.address, buyAmount);
+
+            await displayIndex(index);
+
+            await index.addComponent({
+                vault: await yearnFactory.vaultFor(usdt.address),
+                targetWeight: 200,
+            });
+
+            await displayIndex(index);
+
+            const balance = await index.balanceOf(owner.address);
+            await index.withdraw(usdt.address, balance.div(2));
+
             await displayIndex(index);
         });
     });
